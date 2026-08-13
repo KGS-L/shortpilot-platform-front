@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ShortPilot", template: "%s · ShortPilot" },
-  description: "Créez et publiez vos vidéos courtes sur tous vos réseaux.",
+  title: { default: "ShortPilot — Une idée, partout", template: "%s · ShortPilot" },
+  description: "Transformez vos vidéos en contenus réguliers pour développer votre audience, vos clients et vos revenus.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,0 +1,13 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { BadgePercent, ChartNoAxesCombined, CircleDollarSign, Globe2, MoveLeft, Sparkles } from "lucide-react";
+import { PartnerForm } from "./partner-form";
+
+export const metadata: Metadata = { title:"Devenir partenaire", description:"Rejoignez le programme partenaire ShortPilot." };
+const benefits = [
+  {icon:BadgePercent,title:"Une offre utile à partager",text:"Votre communauté bénéficie de 10 % de réduction avec votre code personnel."},
+  {icon:CircleDollarSign,title:"Des commissions récurrentes",text:"Recevez une part des abonnements éligibles issus de votre recommandation."},
+  {icon:ChartNoAxesCombined,title:"Un suivi transparent",text:"Suivez conversions et commissions depuis votre espace partenaire."},
+  {icon:Globe2,title:"Une audience internationale",text:"Présentez ShortPilot aux créateurs et entrepreneurs, où qu’ils publient."},
+];
+export default function PartnersPage() { return <main className="min-h-screen bg-[#fbfaf6] text-[#172033]"><nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5"><Link href="/" className="text-xl font-black tracking-[-.04em]">Short<span className="text-lime-600">Pilot</span></Link><Link href="/" className="flex items-center gap-2 text-sm font-bold"><MoveLeft size={17}/> Retour</Link></nav><section className="mx-auto grid max-w-7xl items-start gap-14 px-5 pb-24 pt-12 lg:grid-cols-[1fr_.85fr] lg:pt-20"><div><p className="inline-flex items-center gap-2 rounded-full bg-lime-100 px-4 py-2 text-xs font-black uppercase tracking-[.14em] text-lime-800"><Sparkles size={14}/> Grandir ensemble</p><h1 className="mt-7 max-w-3xl text-5xl font-black leading-[.93] tracking-[-.06em] sm:text-7xl">Votre influence mérite plus qu’un simple lien.</h1><p className="mt-7 max-w-2xl text-xl leading-8 text-slate-600">Recommandez un outil utile à votre audience. Elle économise, vous participez à notre croissance et vous êtes rémunéré lorsque la relation dure.</p><div className="mt-12 grid gap-4 sm:grid-cols-2">{benefits.map(({icon:Icon,title,text})=><article key={title} className="rounded-3xl border bg-white p-6"><Icon className="text-orange-500"/><h2 className="mt-5 text-xl font-black">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p></article>)}</div><div className="mt-8 rounded-3xl bg-[#172033] p-6 text-white"><p className="font-black">Le principe est simple</p><p className="mt-2 text-sm leading-6 text-slate-300">Votre code offre 10 % de réduction. Le taux, la durée des commissions et le seuil de versement sont confirmés dans votre contrat avant activation.</p></div></div><PartnerForm/></section></main>; }
