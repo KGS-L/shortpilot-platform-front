@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export type Space = "user" | "partner" | "admin";
 const navigation = {
-  user:["Mon espace",[["Vue d’ensemble","/dashboard",LayoutDashboard],["Contenus","/dashboard/videos",Film],["Publications","/dashboard/publications",Send],["Connexions","/dashboard/integrations",Radio],["Facturation","/dashboard/billing",CreditCard],["Analyses","/dashboard/analytics",BarChart3]]],
+  user:["Mon espace",[["Vue d’ensemble","/dashboard",LayoutDashboard],["Contenus","/dashboard/videos",Film],["Publications","/dashboard/publications",Send],["Connexions","/dashboard/integrations",Radio],["Facturation","/dashboard/billing",CreditCard],["Analyses","/dashboard/analytics",BarChart3],["Paramètres","/dashboard/settings",Settings]]],
   partner:["Espace partenaire",[["Vue d’ensemble","/partner-dashboard",LayoutDashboard],["Mes campagnes","/partner-dashboard/campaigns",HeartHandshake],["Conversions","/partner-dashboard/conversions",BarChart3],["Commissions","/partner-dashboard/commissions",CircleDollarSign],["Versements","/partner-dashboard/payouts",CreditCard],["Ressources","/partner-dashboard/resources",BriefcaseBusiness]]],
   admin:["Administration",[["Vue d’ensemble","/admin",LayoutDashboard],["Utilisateurs","/admin/users",Users],["Partenaires","/admin/partners",HeartHandshake],["Abonnements","/admin/billing",CreditCard],["Jobs & publications","/admin/jobs",Workflow],["Santé plateforme","/admin/health",ShieldCheck],["Paramètres","/admin/settings",Settings]]],
 } as const;
