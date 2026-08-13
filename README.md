@@ -17,6 +17,10 @@ L'application est disponible sur `http://localhost:3000` et attend l'API sur
 propres à chaque environnement, notamment pour les métadonnées sociales. Elles
 ne doivent pas être figées sur le futur domaine de production.
 
+`NEXT_PUBLIC_INDEXING_ENABLED` vaut `false` par défaut : les environnements de
+test publient `noindex, nofollow` et un `robots.txt` qui interdit l’exploration.
+La valeur `true` doit être réservée au domaine de production prêt à indexer.
+
 ## Commandes
 
 - `npm run dev` : serveur de développement ;
