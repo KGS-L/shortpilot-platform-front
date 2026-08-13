@@ -12,7 +12,7 @@ export function PartnerForm() {
     <div className="grid gap-4 sm:grid-cols-2"><Field label="Votre principal réseau" name="network" placeholder="YouTube, TikTok…"/><Field label="Taille de votre audience" name="audience" placeholder="Ex. 25 000"/></div>
     <Field label="Lien vers votre profil" name="profile_url" type="url" placeholder="https://…"/>
     <label className="block text-sm font-bold">Pourquoi souhaitez-vous nous rejoindre ?<textarea required name="motivation" rows={4} className="mt-2 w-full rounded-2xl border bg-slate-50 px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-lime-400" placeholder="Parlez-nous de votre audience et de vos idées…"/></label>
-    <label className="flex items-start gap-3 text-xs leading-5 text-slate-500"><input required type="checkbox" className="mt-1 accent-lime-600"/>J’accepte que ShortPilot utilise ces informations pour étudier et répondre à ma candidature.</label>
+    <label className="flex items-start gap-3 text-xs leading-5 text-slate-500"><input required type="checkbox" className="mt-1 accent-lime-600"/>J’accepte que Omnelyo utilise ces informations pour étudier et répondre à ma candidature.</label>
     <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-[#172033] px-6 py-4 font-black text-white">Envoyer ma candidature <ArrowRight size={18}/></button>
   </form>;
 }

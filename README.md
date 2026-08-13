@@ -1,6 +1,6 @@
-# ShortPilot Frontend
+# Omnelyo Frontend
 
-Interface SaaS de ShortPilot construite avec Next.js, TypeScript et Tailwind CSS.
+Interface SaaS d’Omnelyo construite avec Next.js, TypeScript et Tailwind CSS.
 
 ## Démarrage
 
@@ -12,6 +12,10 @@ npm run dev
 
 L'application est disponible sur `http://localhost:3000` et attend l'API sur
 `NEXT_PUBLIC_API_URL` (`http://localhost:8000` par défaut).
+
+`NEXT_PUBLIC_APP_URL` et `NEXT_PUBLIC_SITE_URL` définissent les URL publiques
+propres à chaque environnement, notamment pour les métadonnées sociales. Elles
+ne doivent pas être figées sur le futur domaine de production.
 
 ## Commandes
 

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "./providers";
+import { publicEnv } from "@/lib/env";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ShortPilot — Une idée, partout", template: "%s · ShortPilot" },
-  description: "Transformez vos vidéos en contenus réguliers pour développer votre audience, vos clients et vos revenus.",
+  metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  applicationName: "Omnelyo",
+  title: { default: "Omnelyo — Create once. Be everywhere.", template: "%s · Omnelyo" },
+  description: "Create once. Be everywhere. Transformez vos vidéos en contenus adaptés à chaque plateforme.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "Omnelyo",
+    title: "Omnelyo — Create once. Be everywhere.",
+    description: "Transformez vos vidéos en contenus adaptés à chaque plateforme.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Omnelyo — Create once. Be everywhere.",
+    description: "Transformez vos vidéos en contenus adaptés à chaque plateforme.",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
