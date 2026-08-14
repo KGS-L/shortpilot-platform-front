@@ -1,137 +1,79 @@
-# Déploiement staging d’Omnelyo
+# Déploiement staging du Frontend Omnelyo
 
 Le workflow `.github/workflows/deploy.yml` valide le frontend, publie une image
-dans GHCR, puis remplace uniquement le conteneur `omnelyo-frontend`. PostgreSQL,
-Redis, l’API, les workers et le bot ne font pas partie du fichier Compose et ne
-peuvent donc pas être redémarrés par ce déploiement.
+dans GitHub Container Registry (GHCR), puis déploie l'image immuable (identifiée par le SHA Git)
+sur le VPS en utilisant un **runner GitHub auto-hébergé** (sur la même architecture que le backend).
 
 ## Configuration GitHub
 
-Créer les secrets Actions suivants dans les paramètres du dépôt :
+Créer un environnement GitHub nommé `staging`.
 
-- `VPS_HOST` : nom DNS ou adresse IP du VPS ;
-- `VPS_PORT` : port SSH, généralement `22` ;
-- `VPS_USER` : utilisateur de déploiement membre du groupe Docker ;
-- `VPS_SSH_PRIVATE_KEY` : clé privée dédiée au déploiement ;
-- `VPS_KNOWN_HOSTS` : ligne `known_hosts` vérifiée pour le VPS ;
-- `VPS_FRONTEND_PATH` : dossier absolu dédié, par exemple `/opt/omnelyo/frontend`.
+### Secrets GitHub (Environment / Repository Secrets)
 
-Créer également les variables Actions suivantes :
+| Secret | Description / Valeur attendue |
+|---|---|
+| `VPS_FRONTEND_PATH` | Dossier absolu sur le VPS, par exemple `/opt/omnelyo/frontend` ou `/home/admin/projects/omnelyo-frontend` |
+| `GHCR_USERNAME` | Compte GitHub autorisé à lire le package container |
+| `GHCR_TOKEN` | Token GitHub (Personal Access Token) limité à `read:packages` |
 
-- `NEXT_PUBLIC_API_URL=https://api-omnelyo.kgslab.com`
-- `NEXT_PUBLIC_APP_URL=https://omnelyo.kgslab.com`
-- `NEXT_PUBLIC_SITE_URL=https://omnelyo.kgslab.com`
-- `NEXT_PUBLIC_ENVIRONMENT=staging`
+### Variables GitHub (Actions Variables)
 
-Le workflow force `NEXT_PUBLIC_INDEXING_ENABLED=false`. De plus, le code refuse
-l’indexation hors de `production`, même si cette valeur était accidentellement
-activée. Les variables `NEXT_PUBLIC_*` sont incorporées au bundle pendant la
-construction et ne doivent contenir aucun secret.
+- `NEXT_PUBLIC_API_URL` : URL de l'API (ex: `https://api-omnelyo.kgslab.com`)
+- `NEXT_PUBLIC_APP_URL` : URL de l'application (ex: `https://omnelyo.kgslab.com`)
+- `NEXT_PUBLIC_SITE_URL` : URL du site public (ex: `https://omnelyo.kgslab.com`)
+- `NEXT_PUBLIC_ENVIRONMENT` : `staging`
 
-Si le paquet GHCR est privé, vérifier dans ses paramètres qu’il hérite bien des
-droits du dépôt ou que le dépôt dispose d’un accès Actions en lecture/écriture.
+Le workflow force `NEXT_PUBLIC_INDEXING_ENABLED=false` pour bloquer le référencement sur l'environnement de staging. Les variables `NEXT_PUBLIC_*` sont incorporées au bundle pendant la construction et ne doivent contenir aucun secret.
 
-### Construction sécurisée de `VPS_KNOWN_HOSTS`
+Le job `deploy` utilise un runner GitHub auto-hébergé sur le VPS (`runs-on: [self-hosted, Linux, X64]`). La connexion du runner vers GitHub est sortante : aucun accès SSH entrant depuis les runners distants de GitHub n'est requis.
 
-Depuis une machine d’administration fiable, récupérer la clé, comparer son
-empreinte à celle affichée directement sur le VPS, puis enregistrer la ligne
-validée comme secret GitHub :
-
-```bash
-ssh-keyscan -p 22 omnelyo.kgslab.com > omnelyo_known_hosts
-ssh-keygen -lf omnelyo_known_hosts
-```
-
-Ne jamais produire ce secret dynamiquement dans le workflow : cela annulerait la
-protection contre les attaques de l’homme du milieu.
+---
 
 ## Préparation unique du VPS
 
-Docker Engine, le plugin Docker Compose, `curl` et Nginx doivent être installés. Ensuite,
-avec le nom réel de l’utilisateur de déploiement :
+1. **Créer le répertoire dédié au frontend et attribuer les droits** :
+   ```bash
+   sudo bash scripts/bootstrap-vps-env.sh deploy /opt/omnelyo/frontend
+   ```
 
-```bash
-sudo usermod -aG docker DEPLOY_USER
-sudo install -d -m 0750 -o DEPLOY_USER -g docker /opt/omnelyo/frontend
-sudo nginx -t
-```
+2. **Vérification Nginx & DNS** :
+   S'assurer que Nginx est installé et que le domaine (ex: `omnelyo.kgslab.com`) pointe vers l'adresse IP du VPS (`72.61.98.7`).
+   ```bash
+   sudo bash scripts/configure-nginx.sh --domain omnelyo.kgslab.com --expected-ip 72.61.98.7
+   ```
 
-Fermer puis rouvrir la session de `DEPLOY_USER` pour appliquer son appartenance
-au groupe Docker. Définir ensuite `VPS_FRONTEND_PATH=/opt/omnelyo/frontend` dans
-GitHub. Le workflow y copie automatiquement `compose.staging.yml` et le script
-de déploiement ; aucun clone Git n’est nécessaire sur le VPS.
+3. **Activation du certificat SSL/TLS Let's Encrypt (Certbot)** :
+   ```bash
+   sudo bash scripts/configure-nginx.sh --domain omnelyo.kgslab.com --expected-ip 72.61.98.7 --email votre-email@example.com
+   ```
 
-Le pare-feu du VPS ne doit pas exposer le port `3000`. Le Compose publie le
-service uniquement sur `127.0.0.1:3000`.
+---
 
-## Configuration Nginx
+## Déploiement et Rollback Automatique
 
-Exemple de bloc pour `/etc/nginx/sites-available/omnelyo-staging` :
+Un push sur la branche `main` déclenche automatiquement :
+1. Validation Lint, Type-Check TypeScript et tests Vitest.
+2. Build Docker de l'application Next.js standalone.
+3. Publication de l'image immuable sur GHCR avec le tag `${GITHUB_SHA}` et `staging-latest`.
+4. Remplacement du conteneur `omnelyo-frontend` sur le VPS.
+5. Contrôle de santé local sur `http://127.0.0.1:3000/`.
 
-```nginx
-server {
-    listen 80;
-    listen [::]:80;
-    server_name omnelyo.kgslab.com;
-    return 301 https://$host$request_uri;
-}
+Si le contrôleur de santé échoue pendant la minute qui suit le déploiement, le script **restaure automatiquement** la version de l'image précédente enregistrée dans `.deployed-frontend-image`.
 
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name omnelyo.kgslab.com;
+### Rollback manuel
 
-    ssl_certificate /etc/letsencrypt/live/omnelyo.kgslab.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/omnelyo.kgslab.com/privkey.pem;
-
-    add_header X-Robots-Tag "noindex, nofollow" always;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_buffering off;
-        proxy_read_timeout 60s;
-    }
-}
-```
-
-Activer et valider la configuration sans toucher aux autres services :
-
-```bash
-sudo ln -s /etc/nginx/sites-available/omnelyo-staging /etc/nginx/sites-enabled/omnelyo-staging
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-## Rollback automatique et manuel
-
-Avant chaque remplacement, le script enregistre l’image courante dans
-`.previous-frontend-image`. Si le contrôle local ou HTTPS échoue pendant une
-minute, il recrée automatiquement le frontend avec cette image et fait échouer
-le workflow.
-
-Rollback manuel vers l’image précédente :
+Pour revenir manuellement à l'image précédente directement sur le VPS :
 
 ```bash
 cd /opt/omnelyo/frontend
-previous_image=$(cat .previous-frontend-image)
+previous_image=$(cat .deployed-frontend-image)
 FRONTEND_IMAGE="$previous_image" docker compose -f compose.staging.yml up -d --no-deps --force-recreate frontend
-curl --fail --show-error https://omnelyo.kgslab.com/
+curl --fail http://127.0.0.1:3000/
 ```
 
-Rollback manuel vers un SHA précis déjà présent sur le VPS :
+Pour déployer manuellement un SHA d'image spécifique :
 
 ```bash
 cd /opt/omnelyo/frontend
-FRONTEND_IMAGE="ghcr.io/OWNER/FRONTEND_REPOSITORY:COMMIT_SHA" docker compose -f compose.staging.yml up -d --no-deps --force-recreate frontend
+FRONTEND_IMAGE="ghcr.io/PROPRIETAIRE/omnelyo-frontend:COMMIT_SHA" docker compose -f compose.staging.yml up -d --no-deps --force-recreate frontend
 ```
-
-Si l’image SHA n’est plus locale, effectuer au préalable un `docker login
-ghcr.io` avec un jeton personnel limité à `read:packages`, puis exécuter
-`docker compose pull frontend`. Ne jamais placer ce jeton dans le Compose.

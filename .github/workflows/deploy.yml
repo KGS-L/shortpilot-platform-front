@@ -10,11 +10,12 @@ permissions:
   packages: write
 
 concurrency:
-  group: omnelyo-frontend-staging
+  group: frontend-staging
   cancel-in-progress: false
 
 env:
-  HEALTHCHECK_URL: https://omnelyo.kgslab.com
+  REGISTRY: ghcr.io
+  HEALTHCHECK_URL: http://127.0.0.1:3000/
   NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
   NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
@@ -22,14 +23,21 @@ env:
   NEXT_PUBLIC_INDEXING_ENABLED: "false"
 
 jobs:
-  validate-build-publish-deploy:
-    name: Validate, publish and deploy
+  publish:
+    name: Validate, build and publish
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 25
+    outputs:
+      image: ${{ steps.image.outputs.ref }}
+      source_sha: ${{ steps.source.outputs.sha }}
     steps:
       - name: Check out the exact commit
         uses: actions/checkout@v4
+
+      - name: Resolve source revision
+        id: source
+        run: |
+          echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Validate public staging variables
         shell: bash
@@ -61,10 +69,16 @@ jobs:
       - name: Build production frontend
         run: npm run build
 
-      - name: Compute lowercase GHCR image name
+      - name: Resolve immutable image name
         id: image
         shell: bash
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          image_name="${OWNER,,}/omnelyo-frontend"
+          echo "name=$image_name" >> "$GITHUB_OUTPUT"
+          echo "ref=${REGISTRY}/${image_name}:${SOURCE_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -72,7 +86,7 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -84,8 +98,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ steps.image.outputs.name }}:staging-latest
-            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.ref }}
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:staging-latest
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
@@ -96,121 +110,79 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: true
 
-      - name: Configure strict SSH trust
-        shell: bash
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
-        run: |
-          set -euo pipefail
-          install -m 700 -d "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/omnelyo_deploy"
-          chmod 600 "$HOME/.ssh/omnelyo_deploy"
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/known_hosts"
+  deploy:
+    name: Deploy on self-hosted VPS
+    needs: publish
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 15
+    environment: staging
+    steps:
+      - name: Check out code on VPS runner
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source_sha }}
 
-      - name: Validate VPS deployment secrets
-        shell: bash
+      - name: Install deployment manifests locally
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
           VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
         run: |
           set -euo pipefail
-          test -n "$VPS_HOST" || { echo "VPS_HOST is required." >&2; exit 1; }
-          test -n "$VPS_PORT" || { echo "VPS_PORT is required." >&2; exit 1; }
-          test -n "$VPS_USER" || { echo "VPS_USER is required." >&2; exit 1; }
           test -n "$VPS_FRONTEND_PATH" || { echo "VPS_FRONTEND_PATH is required." >&2; exit 1; }
+          install -d -m 750 "$VPS_FRONTEND_PATH" "$VPS_FRONTEND_PATH/scripts" "$VPS_FRONTEND_PATH/deploy"
+          install -m 640 compose.staging.yml "$VPS_FRONTEND_PATH/"
+          if [ -d scripts ]; then
+            install -m 750 scripts/*.sh "$VPS_FRONTEND_PATH/scripts/"
+          fi
 
-      - name: Copy frontend-only deployment files
-        shell: bash
+      - name: Deploy immutable image and verify health
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
           VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          TARGET_IMAGE: ${{ needs.publish.outputs.image }}
+          HEALTHCHECK_URL: ${{ env.HEALTHCHECK_URL }}
         run: |
-          set -euo pipefail
-          scp -P "$VPS_PORT" \
-            -i "$HOME/.ssh/omnelyo_deploy" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-            compose.staging.yml deploy/deploy-frontend.sh \
-            "$VPS_USER@$VPS_HOST:$VPS_FRONTEND_PATH/"
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+          cd "$VPS_FRONTEND_PATH"
 
-      - name: Authenticate VPS to GHCR
-        shell: bash
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
-        run: |
-          set -euo pipefail
-          printf -v remote_path_q '%q' "$VPS_FRONTEND_PATH"
-          printf '%s' "$GHCR_TOKEN" | ssh -p "$VPS_PORT" \
-            -i "$HOME/.ssh/omnelyo_deploy" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-            "$VPS_USER@$VPS_HOST" \
-            "install -d -m 700 $remote_path_q/.docker-deploy && DOCKER_CONFIG=$remote_path_q/.docker-deploy docker login ghcr.io --username '$GITHUB_ACTOR' --password-stdin"
+          compose=(docker compose -f compose.staging.yml)
+          state_file=.deployed-frontend-image
+          previous_image=""
+          if [[ -f "$state_file" ]]; then
+            previous_image="$(tr -d '\r\n' < "$state_file")"
+          fi
 
-      - name: Deploy immutable image with automatic rollback
-        shell: bash
-        env:
-          IMAGE_NAME: ${{ steps.image.outputs.name }}
-          IMAGE_DIGEST: ${{ steps.docker.outputs.digest }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
-        run: |
-          set -euo pipefail
-          image_ref="$IMAGE_NAME@$IMAGE_DIGEST"
-          printf -v remote_path_q '%q' "$VPS_FRONTEND_PATH"
-          printf -v image_ref_q '%q' "$image_ref"
-          printf -v healthcheck_q '%q' "$HEALTHCHECK_URL"
-          ssh -p "$VPS_PORT" \
-            -i "$HOME/.ssh/omnelyo_deploy" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-            "$VPS_USER@$VPS_HOST" \
-            "cd $remote_path_q && DOCKER_CONFIG=$remote_path_q/.docker-deploy sh deploy-frontend.sh $image_ref_q $healthcheck_q"
-
-      - name: Verify public staging health
-        shell: bash
-        run: |
-          set -euo pipefail
-          for attempt in {1..12}; do
-            if curl --fail --silent --show-error --max-time 10 "$HEALTHCHECK_URL" >/dev/null; then
-              echo "Public frontend healthcheck passed."
-              exit 0
+          rollback() {
+            trap - ERR
+            if [[ -n "$previous_image" && "$previous_image" != "$TARGET_IMAGE" ]]; then
+              echo "Healthcheck en échec, retour à l'image précédente : $previous_image" >&2
+              FRONTEND_IMAGE="$previous_image" "${compose[@]}" up -d --no-deps --force-recreate frontend
             fi
-            sleep 5
-          done
-          echo "Public frontend healthcheck failed after 60 seconds." >&2
-          exit 1
+          }
+          trap rollback ERR
 
-      - name: Remove temporary VPS registry credentials
-        if: always()
-        continue-on-error: true
-        shell: bash
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_FRONTEND_PATH: ${{ secrets.VPS_FRONTEND_PATH }}
-        run: |
-          printf -v remote_path_q '%q' "$VPS_FRONTEND_PATH"
-          ssh -p "$VPS_PORT" \
-            -i "$HOME/.ssh/omnelyo_deploy" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
-            "$VPS_USER@$VPS_HOST" \
-            "DOCKER_CONFIG=$remote_path_q/.docker-deploy docker logout ghcr.io >/dev/null 2>&1 || true; rm -rf $remote_path_q/.docker-deploy"
+          echo "Pulling target image: $TARGET_IMAGE"
+          FRONTEND_IMAGE="$TARGET_IMAGE" "${compose[@]}" pull frontend
+          echo "Recreating frontend service..."
+          FRONTEND_IMAGE="$TARGET_IMAGE" "${compose[@]}" up -d --no-deps --force-recreate frontend
+
+          healthy=false
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error --max-time 10 "$HEALTHCHECK_URL" >/dev/null; then
+              healthy=true
+              echo "Healthcheck local réussi sur $HEALTHCHECK_URL"
+              break
+            fi
+            sleep 3
+          done
+
+          if [[ "$healthy" != true ]]; then
+            echo "Le healthcheck a échoué après 60 secondes." >&2
+            exit 1
+          fi
+
+          printf '%s\n' "$TARGET_IMAGE" > "$state_file"
+          trap - ERR
+          "${compose[@]}" ps
+          docker image prune -f --filter "until=168h"
