@@ -129,10 +129,13 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$VPS_FRONTEND_PATH" || { echo "VPS_FRONTEND_PATH is required." >&2; exit 1; }
-          install -d -m 750 "$VPS_FRONTEND_PATH" "$VPS_FRONTEND_PATH/scripts" "$VPS_FRONTEND_PATH/deploy"
+          install -d -m 750 "$VPS_FRONTEND_PATH" "$VPS_FRONTEND_PATH/scripts" "$VPS_FRONTEND_PATH/deploy" "$VPS_FRONTEND_PATH/deploy/nginx"
           install -m 640 compose.staging.yml "$VPS_FRONTEND_PATH/"
           if [ -d scripts ]; then
             install -m 750 scripts/*.sh "$VPS_FRONTEND_PATH/scripts/"
+          fi
+          if [ -d deploy/nginx ]; then
+            install -m 640 deploy/nginx/* "$VPS_FRONTEND_PATH/deploy/nginx/"
           fi
 
       - name: Deploy immutable image and verify health
