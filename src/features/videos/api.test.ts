@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { publicEnv } from "@/lib/env";
 import { contentApi } from "./api";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -16,12 +17,13 @@ describe("contentApi", () => {
       contentApi.listMediaAssets("workspace-1", "token"),
     ]);
 
+    const baseUrl = publicEnv.NEXT_PUBLIC_API_URL;
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/v1/workspaces/workspace-1/videos?limit=100",
+      `${baseUrl}/v1/workspaces/workspace-1/videos?limit=100`,
       expect.objectContaining({ cache: "no-store" }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/v1/workspaces/workspace-1/media-assets?limit=100",
+      `${baseUrl}/v1/workspaces/workspace-1/media-assets?limit=100`,
       expect.objectContaining({ cache: "no-store" }),
     );
   });
@@ -35,8 +37,9 @@ describe("contentApi", () => {
 
     await contentApi.importUrl("workspace-1", "https://example.com/video.mp4", "Ma vidéo", "secret-token");
 
+    const baseUrl = publicEnv.NEXT_PUBLIC_API_URL;
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://localhost:8000/v1/workspaces/workspace-1/jobs");
+    expect(url).toBe(`${baseUrl}/v1/workspaces/workspace-1/jobs`);
     expect(init.method).toBe("POST");
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret-token");
     expect(JSON.parse(init.body as string)).toEqual({
