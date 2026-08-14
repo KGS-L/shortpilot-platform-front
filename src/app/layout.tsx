@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "Omnelyo — Create once. Be everywhere.",
     description: "Transformez vos vidéos en contenus adaptés à chaque plateforme.",
   },
-  robots: publicEnv.NEXT_PUBLIC_INDEXING_ENABLED === "true"
+  robots: publicEnv.NEXT_PUBLIC_ENVIRONMENT === "production" && publicEnv.NEXT_PUBLIC_INDEXING_ENABLED === "true"
     ? { index: true, follow: true }
     : { index: false, follow: false, googleBot: { index: false, follow: false } },
 };

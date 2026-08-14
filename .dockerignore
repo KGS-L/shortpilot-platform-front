@@ -1,4 +1,5 @@
 .git
+.github
 .next
 node_modules
 .env
@@ -8,4 +9,7 @@ npm-debug.log*
 coverage
 playwright-report
 test-results
+deploy
+DEPLOYMENT.md
+compose*.yml
 tsconfig.tsbuildinfo

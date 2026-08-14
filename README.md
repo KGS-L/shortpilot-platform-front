@@ -21,6 +21,9 @@ ne doivent pas être figées sur le futur domaine de production.
 test publient `noindex, nofollow` et un `robots.txt` qui interdit l’exploration.
 La valeur `true` doit être réservée au domaine de production prêt à indexer.
 
+Le déploiement Docker automatisé du staging, les secrets GitHub, la préparation
+du VPS, Nginx et le rollback sont documentés dans [`DEPLOYMENT.md`](DEPLOYMENT.md).
+
 ## Commandes
 
 - `npm run dev` : serveur de développement ;
