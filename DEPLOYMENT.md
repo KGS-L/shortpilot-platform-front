@@ -12,7 +12,7 @@ Créer un environnement GitHub nommé `staging`.
 
 | Secret | Description / Valeur attendue |
 |---|---|
-| `VPS_FRONTEND_PATH` | Dossier absolu sur le VPS, par exemple `/opt/omnelyo/frontend` ou `/home/admin/projects/omnelyo-frontend` |
+| `VPS_FRONTEND_PATH` | Dossier absolu sur le VPS, par exemple `/opt/omnelyo/frontend` ou `/home/admin/projects/omnelyo/frontend` |
 | `GHCR_USERNAME` | Compte GitHub autorisé à lire le package container |
 | `GHCR_TOKEN` | Token GitHub (Personal Access Token) limité à `read:packages` |
 
