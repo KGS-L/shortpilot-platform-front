@@ -26,6 +26,7 @@ jobs:
   publish:
     name: Validate, build and publish
     runs-on: ubuntu-latest
+    environment: staging
     timeout-minutes: 25
     outputs:
       image: ${{ steps.image.outputs.ref }}
