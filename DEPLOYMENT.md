@@ -29,15 +29,21 @@ Le job `deploy` utilise un runner GitHub auto-hébergé sur le VPS (`runs-on: [s
 
 ---
 
-## Préparation unique du VPS
+## Préparation unique du VPS (Installation Nginx & SSL)
+
+> [!IMPORTANT]
+> Pour que le site soit accessible publiquement en HTTPS (`https://omnelyo.kgslab.com`), vous devez exécuter **une seule fois avec sudo** la commande de configuration Nginx et SSL sur le VPS :
+> ```bash
+> cd /home/admin/projects/omnelyo/frontend
+> sudo bash scripts/configure-nginx.sh --domain omnelyo.kgslab.com --expected-ip 72.61.98.7 --email votre-email@example.com
+> ```
 
 1. **Créer le répertoire dédié au frontend et attribuer les droits** :
    ```bash
-   sudo bash scripts/bootstrap-vps-env.sh deploy /opt/omnelyo/frontend
+   sudo bash scripts/bootstrap-vps-env.sh admin /home/admin/projects/omnelyo/frontend
    ```
 
-2. **Vérification Nginx & DNS** :
-   S'assurer que Nginx est installé et que le domaine (ex: `omnelyo.kgslab.com`) pointe vers l'adresse IP du VPS (`72.61.98.7`).
+2. **Vérification Nginx & DNS (sans SSL)** :
    ```bash
    sudo bash scripts/configure-nginx.sh --domain omnelyo.kgslab.com --expected-ip 72.61.98.7
    ```

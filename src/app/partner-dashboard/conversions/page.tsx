@@ -1,3 +1,20 @@
-import { Filter, Search, ShoppingBag, TrendingUp, Users } from "lucide-react";
-const entries=[["13 août 2026","Creator","JONAS10","19,00 $","Confirmée"],["12 août 2026","Pro","JONASYT10","49,00 $","Confirmée"],["12 août 2026","Creator","JONAS10","19,00 $","En attente"],["10 août 2026","Creator","NOVA10","19,00 $","Confirmée"]];
-export default function ConversionsPage(){return <div className="mx-auto max-w-7xl"><header><p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Attribution</p><h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Conversions.</h1><p className="mt-2 text-slate-500">Suivez les abonnements attribués à vos recommandations.</p></header><section className="mt-8 grid gap-4 sm:grid-cols-3">{[["Conversions","46",ShoppingBag],["Taux de conversion","3,6 %",TrendingUp],["Clients actifs","31",Users]].map(([label,value,Icon])=><article key={label as string} className="rounded-3xl border bg-white p-5"><Icon className="text-orange-500"/><p className="mt-5 text-sm text-slate-500">{label as string}</p><p className="mt-1 text-3xl font-black">{value as string}</p></article>)}</section><section className="mt-6 overflow-hidden rounded-3xl border bg-white"><div className="flex flex-wrap justify-between gap-3 border-b p-5"><h2 className="text-xl font-black">Historique</h2><div className="flex gap-2"><label className="flex h-10 items-center gap-2 rounded-full border px-4"><Search size={15}/><input className="w-28 text-sm outline-none" placeholder="Rechercher"/></label><button className="grid h-10 w-10 place-items-center rounded-full border" aria-label="Filtrer"><Filter size={16}/></button></div></div><div className="divide-y">{entries.map(([date,plan,code,amount,status])=><div key={`${date}-${code}`} className="grid grid-cols-[1fr_auto] gap-3 px-5 py-4 sm:grid-cols-[1.3fr_1fr_1fr_1fr_120px]"><span className="font-bold">{date}</span><span className="hidden sm:block">{plan}</span><code className="hidden text-xs sm:block">{code}</code><span className="font-black">{amount}</span><span className={`hidden w-fit rounded-full px-3 py-1 text-xs font-bold sm:block ${status==="Confirmée"?"bg-lime-50 text-lime-700":"bg-orange-50 text-orange-700"}`}>{status}</span></div>)}</div></section><p className="mt-5 text-xs text-slate-400">Données anonymisées de démonstration — aucune identité client n’est exposée.</p></div>}
+import { AsyncState } from "@/components/ui/async-state";
+
+export default function ConversionsPage() {
+  return (
+    <div className="mx-auto max-w-7xl">
+      <header>
+        <p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Attribution</p>
+        <h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Conversions.</h1>
+        <p className="mt-2 text-slate-500">Suivez les abonnements attribués à vos recommandations.</p>
+      </header>
+      <div className="mt-8">
+        <AsyncState
+          kind="empty"
+          title="Conversions indisponibles"
+          description="L’historique des conversions et le taux d’attribution proviendront des endpoints du programme partenaire, pas encore disponibles dans l’API."
+        />
+      </div>
+    </div>
+  );
+}

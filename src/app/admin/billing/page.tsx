@@ -1,3 +1,71 @@
-import { AlertCircle, CircleDollarSign, CreditCard, RefreshCcw, RotateCcw, TrendingUp } from "lucide-react";
-const payments=[["pay_demo_1842","Creator","Dodo","19,00 $","Payé"],["pay_demo_1841","Pro","MoneyFusion","49,00 $","Payé"],["pay_demo_1840","Creator","Dodo","19,00 $","À vérifier"],["pay_demo_1839","Pro","Dodo","49,00 $","Remboursé"]];
-export default function AdminBilling(){return <div className="mx-auto max-w-[1500px]"><header><p className="text-sm font-black uppercase tracking-[.15em] text-red-600">Administration</p><h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Facturation et abonnements.</h1><p className="mt-2 text-slate-500">Surveillez les revenus, paiements et anomalies.</p></header><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[[CircleDollarSign,"MRR","8 420 $","+9,4 %"],[CreditCard,"Abonnements payants","286","Creator + Pro"],[TrendingUp,"Revenu août","9 182 $","Brut"],[RotateCcw,"Remboursements","142 $","1,5 %"]].map(([Icon,label,value,note])=><article key={label as string} className="rounded-3xl border bg-white p-5"><Icon className="text-red-500"/><p className="mt-5 text-sm text-slate-500">{label as string}</p><p className="mt-1 text-3xl font-black">{value as string}</p><p className="mt-2 text-xs text-slate-400">{note as string}</p></article>)}</section><div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_.8fr]"><section className="overflow-hidden rounded-3xl border bg-white"><div className="flex items-center justify-between border-b p-5"><h2 className="text-xl font-black">Paiements récents</h2><button aria-label="Actualiser"><RefreshCcw size={17}/></button></div>{payments.map(([id,plan,provider,amount,status])=><div key={id} className="grid grid-cols-[1fr_auto] gap-3 border-b px-5 py-4 last:border-0 sm:grid-cols-[1.3fr_100px_120px_100px_100px]"><code className="text-xs font-bold">{id}</code><span className="hidden text-sm sm:block">{plan}</span><span className="hidden text-sm sm:block">{provider}</span><span className="font-black">{amount}</span><span className={`hidden text-xs font-bold sm:block ${status==="À vérifier"?"text-orange-600":"text-slate-500"}`}>{status}</span></div>)}</section><aside className="rounded-3xl border bg-white p-6"><AlertCircle className="text-orange-500"/><h2 className="mt-5 text-xl font-black">Éléments à vérifier</h2><div className="mt-5 space-y-3">{[["3 webhooks en attente","Dodo Payments"],["1 paiement non rapproché","MoneyFusion"],["2 remboursements récents","Contrôle partenaire"]].map(([title,note])=><div key={title} className="rounded-2xl bg-orange-50 p-4"><p className="font-bold">{title}</p><p className="text-xs text-slate-500">{note}</p></div>)}</div></aside></div><p className="mt-5 text-xs text-slate-400">Données de démonstration — remboursements et abonnements exigent une confirmation explicite.</p></div>}
+"use client";
+
+import { AlertCircle, CircleDollarSign } from "lucide-react";
+import { AsyncState } from "@/components/ui/async-state";
+import { usePlans } from "@/features/billing";
+import { formatBytes } from "@/lib/format";
+
+export default function AdminBilling() {
+  const plansQuery = usePlans();
+
+  return (
+    <div className="mx-auto max-w-[1500px]">
+      <header>
+        <p className="text-sm font-black uppercase tracking-[.15em] text-red-600">Administration</p>
+        <h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Facturation et abonnements.</h1>
+        <p className="mt-2 text-slate-500">Catalogue des plans actifs et état du module de paiement.</p>
+      </header>
+
+      <section className="mt-6 overflow-hidden rounded-3xl border bg-white">
+        <div className="flex items-center justify-between border-b p-5">
+          <h2 className="text-xl font-black">Catalogue des plans</h2>
+          <CircleDollarSign className="text-slate-400"/>
+        </div>
+        {plansQuery.isPending ? (
+          <div className="p-6"><AsyncState kind="loading" description="Chargement du catalogue…"/></div>
+        ) : plansQuery.error ? (
+          <div className="p-6"><AsyncState kind="error" description="Le catalogue des plans est indisponible."/></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs font-black uppercase tracking-wide text-slate-400">
+                  <th className="p-4">Plan</th>
+                  <th className="p-4">Code</th>
+                  <th className="p-4">Crédits / mois</th>
+                  <th className="p-4">Connexions</th>
+                  <th className="p-4">Publications / mois</th>
+                  <th className="p-4">Minutes source</th>
+                  <th className="p-4">Stockage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plansQuery.data?.map((plan) => (
+                  <tr key={plan.code} className="border-b last:border-0">
+                    <td className="p-4 font-black">{plan.name}</td>
+                    <td className="p-4"><code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{plan.code}</code></td>
+                    <td className="p-4 font-bold">{plan.monthly_credits}</td>
+                    <td className="p-4">{plan.social_connections_limit}</td>
+                    <td className="p-4">{plan.publications_monthly_limit}</td>
+                    <td className="p-4">{plan.source_minutes_monthly_limit}</td>
+                    <td className="p-4">{formatBytes(plan.storage_bytes_limit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-3xl border bg-white p-6">
+        <AlertCircle className="text-orange-500"/>
+        <h2 className="mt-4 text-xl font-black">Revenus et paiements</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          L’API n’expose pas encore d’endpoint de reporting financier (MRR, historique des paiements, webhooks en attente).
+          Les transactions sont traitées par Dodo Payments et MoneyFusion puis enregistrées côté serveur ; leur consultation
+          nécessitera un endpoint administrateur dédié.
+        </p>
+      </section>
+    </div>
+  );
+}

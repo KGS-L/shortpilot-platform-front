@@ -1,4 +1,3 @@
-/** Création et suivi des publications multi-plateformes. */
 export * from "./types";
 export * from "./api";
 export * from "./queries";

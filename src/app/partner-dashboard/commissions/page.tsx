@@ -1,4 +1,20 @@
-import { CircleDollarSign, Clock3, Download, Info, WalletCards } from "lucide-react";
-const ledger=[["Conversion Creator","13 août","3,80 $","Disponible"],["Conversion Pro","12 août","9,80 $","Disponible"],["Conversion Creator","12 août","3,80 $","En attente"],["Remboursement","9 août","−3,80 $","Annulée"]];
-export default function CommissionsPage(){return <div className="mx-auto max-w-7xl"><header><p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Revenus</p><h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Vos commissions.</h1><p className="mt-2 text-slate-500">Comprenez chaque montant avant son versement.</p></header><section className="mt-8 grid gap-4 md:grid-cols-3"><Card icon={CircleDollarSign} label="Disponibles" value="184,50 $" note="Éligibles au versement"/><Card icon={Clock3} label="En attente" value="62,40 $" note="Période de validation"/><Card icon={WalletCards} label="Total versé" value="928,20 $" note="Depuis votre inscription"/></section><section className="mt-6 overflow-hidden rounded-3xl border bg-white"><div className="flex items-center justify-between border-b p-5"><div><h2 className="text-xl font-black">Journal des commissions</h2><p className="text-sm text-slate-500">Montants après validation des paiements.</p></div><button aria-label="Exporter" className="grid h-10 w-10 place-items-center rounded-full border"><Download size={17}/></button></div><div className="divide-y">{ledger.map(([label,date,amount,status])=><div key={`${label}-${date}`} className="grid grid-cols-[1fr_auto] px-5 py-4 sm:grid-cols-[1fr_130px_120px_120px]"><div><p className="font-bold">{label}</p><p className="text-xs text-slate-500 sm:hidden">{date}</p></div><span className="hidden text-sm text-slate-500 sm:block">{date}</span><span className={`font-black ${amount.startsWith("−")?"text-red-600":"text-lime-700"}`}>{amount}</span><span className="hidden text-xs font-bold text-slate-500 sm:block">{status}</span></div>)}</div></section><div className="mt-6 flex gap-3 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900"><Info className="shrink-0" size={18}/><p>Une commission reste en attente pendant la période prévue au contrat. Un remboursement peut l’annuler avant qu’elle ne devienne disponible.</p></div><p className="mt-5 text-xs text-slate-400">Données de démonstration — calculs non contractuels.</p></div>}
-function Card({icon:Icon,label,value,note}:{icon:typeof CircleDollarSign;label:string;value:string;note:string}){return <article className="rounded-3xl border bg-white p-5"><Icon className="text-orange-500"/><p className="mt-5 text-sm text-slate-500">{label}</p><p className="mt-1 text-3xl font-black">{value}</p><p className="mt-2 text-xs text-slate-400">{note}</p></article>}
+import { AsyncState } from "@/components/ui/async-state";
+
+export default function CommissionsPage() {
+  return (
+    <div className="mx-auto max-w-7xl">
+      <header>
+        <p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Revenus</p>
+        <h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Vos commissions.</h1>
+        <p className="mt-2 text-slate-500">Comprenez chaque montant avant son versement.</p>
+      </header>
+      <div className="mt-8">
+        <AsyncState
+          kind="empty"
+          title="Commissions indisponibles"
+          description="Le journal des commissions et les soldes (disponible, en attente, versé) seront fournis par les endpoints du programme partenaire, pas encore exposés par l’API."
+        />
+      </div>
+    </div>
+  );
+}

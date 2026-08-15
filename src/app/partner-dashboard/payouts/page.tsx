@@ -1,2 +1,20 @@
-import { Building2, CheckCircle2, Clock3, Plus, Send, ShieldCheck } from "lucide-react";
-export default function PayoutsPage(){return <div className="mx-auto max-w-6xl"><header><p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Versements</p><h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Recevez vos gains.</h1><p className="mt-2 text-slate-500">Choisissez un moyen de versement et suivez vos demandes.</p></header><div className="mt-8 grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><section className="rounded-3xl bg-[#172033] p-6 text-white"><p className="text-sm font-bold text-lime-400">SOLDE DISPONIBLE</p><p className="mt-3 text-4xl font-black">184,50 $</p><p className="mt-2 text-xs text-slate-400">Seuil minimum : valeur définie dans votre contrat.</p><button className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-lime-400 px-5 py-3 text-sm font-black text-slate-900"><Send size={16}/> Demander un versement</button></section><section className="rounded-3xl border bg-white p-6"><div className="flex items-center justify-between"><div><h2 className="text-xl font-black">Moyen de versement</h2><p className="text-sm text-slate-500">Aucune information bancaire complète n’est affichée.</p></div><button className="grid h-10 w-10 place-items-center rounded-full border" aria-label="Ajouter"><Plus size={18}/></button></div><div className="mt-5 flex items-center gap-4 rounded-2xl bg-slate-50 p-4"><span className="grid h-11 w-11 place-items-center rounded-xl bg-white"><Building2/></span><div className="flex-1"><p className="font-bold">Compte bancaire</p><p className="text-xs text-slate-500">Se terminant par •••• 4821</p></div><CheckCircle2 className="text-lime-600" size={19}/></div><p className="mt-4 flex items-center gap-2 text-xs text-slate-500"><ShieldCheck size={14}/> Les modifications sensibles nécessiteront une nouvelle vérification.</p></section></div><section className="mt-6 rounded-3xl border bg-white p-6"><h2 className="text-xl font-black">Historique des versements</h2><div className="mt-5 divide-y">{[["1 août 2026","250,00 $","Payé"],["1 juillet 2026","198,40 $","Payé"],["1 juin 2026","176,20 $","Payé"]].map(([date,amount,status])=><div key={date} className="flex items-center gap-4 py-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-lime-50 text-lime-700"><Clock3 size={17}/></span><div className="flex-1"><p className="font-bold">{date}</p><p className="text-xs text-slate-500">{status}</p></div><p className="font-black">{amount}</p></div>)}</div></section><p className="mt-5 text-xs text-slate-400">Données de démonstration — aucune demande réelle ne sera envoyée.</p></div>}
+import { AsyncState } from "@/components/ui/async-state";
+
+export default function PayoutsPage() {
+  return (
+    <div className="mx-auto max-w-6xl">
+      <header>
+        <p className="text-sm font-black uppercase tracking-[.15em] text-orange-500">Versements</p>
+        <h1 className="mt-1 text-4xl font-black tracking-[-.04em] md:text-5xl">Recevez vos gains.</h1>
+        <p className="mt-2 text-slate-500">Choisissez un moyen de versement et suivez vos demandes.</p>
+      </header>
+      <div className="mt-8">
+        <AsyncState
+          kind="empty"
+          title="Versements indisponibles"
+          description="Le solde, les coordonnées bancaires et l’historique des versements nécessitent les endpoints du programme partenaire, qui ne sont pas encore exposés par l’API. Aucune demande ne peut être envoyée actuellement."
+        />
+      </div>
+    </div>
+  );
+}
