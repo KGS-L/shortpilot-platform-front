@@ -1,7 +1,7 @@
 "use client";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { apiRequest } from "@/lib/api-client";
 import { publicEnv } from "@/lib/env";
@@ -16,7 +16,9 @@ export function LoginForm({nextPath="/dashboard"}:{nextPath?:string}) {
   const googleButton = useRef<HTMLDivElement>(null);
   const [email,setEmail] = useState(""); const [code,setCode] = useState("");
   const [step,setStep] = useState<"email"|"code">("email"); const [loading,setLoading] = useState(false); const [error,setError] = useState("");
-  function complete(tokens:Tokens) { authStorage.setTokens(tokens.access_token,tokens.refresh_token); router.push(nextPath.startsWith("/")&&!nextPath.startsWith("//")?nextPath:"/dashboard"); }
+  const target = nextPath.startsWith("/")&&!nextPath.startsWith("//")?nextPath:"/dashboard";
+  useEffect(() => { if (authStorage.getAccessToken()) router.replace(target); }, [router, target]);
+  function complete(tokens:Tokens) { authStorage.setTokens(tokens.access_token,tokens.refresh_token); router.push(target); }
   function initGoogle() { if (!window.google || !googleButton.current || !publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID) return; window.google.accounts.id.initialize({client_id:publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID,callback:async({credential})=>{setLoading(true);setError("");try{complete(await apiRequest<Tokens>("/v1/auth/google",{method:"POST",body:JSON.stringify({credential})}));}catch(e){setError(e instanceof Error?e.message:"Connexion Google impossible.");setLoading(false);}}}); window.google.accounts.id.renderButton(googleButton.current,{theme:"outline",size:"large",shape:"pill",width:360,text:"continue_with"}); }
   async function submit(event:React.FormEvent) { event.preventDefault(); setLoading(true); setError(""); try { if(step==="email"){await apiRequest("/v1/auth/email/request-otp",{method:"POST",body:JSON.stringify({email})});setStep("code");}else complete(await apiRequest<Tokens>("/v1/auth/email/verify",{method:"POST",body:JSON.stringify({email,code})})); } catch(e){setError(e instanceof Error?e.message:"Une erreur est survenue.");} finally{setLoading(false);} }
   const googleConfigured=Boolean(publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
