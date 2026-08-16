@@ -135,10 +135,16 @@ export default function IntegrationsPage() {
             </div>
           ) : telegramLink ? (
             <div className="mt-5">
-              <p className="text-sm font-bold text-sky-800">Ouvrez ce lien sécurisé dans Telegram :</p>
-              <a href={telegramLink.url} target="_blank" rel="noreferrer" className="mt-2 block break-all rounded-xl bg-white p-3 text-sm font-bold text-sky-700 underline">
-                {telegramLink.url}
+              <p className="text-sm font-bold text-sky-800">Dernière étape : ouvrez Telegram pour terminer la liaison.</p>
+              <a
+                href={telegramLink.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 flex items-center justify-center gap-2 rounded-full bg-sky-600 px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+              >
+                <Bot size={16}/> Ouvrir Telegram
               </a>
+              <p className="mt-2 break-all text-[11px] leading-4 text-slate-400">{telegramLink.url}</p>
               <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-slate-600">
                 {telegramLink.instructions.map((instruction) => <li key={instruction}>{instruction}</li>)}
               </ul>
@@ -160,9 +166,9 @@ export default function IntegrationsPage() {
           <h2 className="text-xl font-black">Connexion en 4 étapes</h2>
           <ol className="mt-5 space-y-4">
             {[
-              "Ouvrez Telegram et recherchez le bot Omnelyo officiel.",
-              "Appuyez sur Démarrer, puis revenez sur Omnelyo.",
-              "Utilisez le lien sécurisé généré ici pour associer votre compte.",
+              "Sur cette page, cliquez sur « Connecter Telegram » : un lien sécurisé unique est généré (valide 10 minutes).",
+              "Ouvrez ce lien : Telegram s’ouvre directement sur le bot Omnelyo.",
+              "Appuyez sur Démarrer : le bot confirme la liaison dans la conversation.",
               "Envoyez un premier média et vérifiez son apparition dans Contenus.",
             ].map((text, index) => (
               <li key={text} className="flex gap-3">
