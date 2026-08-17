@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omnelyo — Mock hero (états a/b)</title>
+<style>
+/* ============================================================
+   key-hero.html — Hero Omnelyo, deux états côte à côte (canvas 360px)
+   Gouverné par :
+   - EXPERIENCE.md → Information Architecture rows 0-1 (Nav fixe, Hero),
+     State Patterns « Visiteur connecté », Responsive & Platform < 768px
+     (nav = logo + actions auth uniquement, H1 clampé à 3,3rem),
+     Interaction Primitives (pas de second CTA dans le hero, pas de CTA Telegram)
+   - DESIGN.md → Components button-primary / button-ghost,
+     Typography display-hero / body-lg / caption / label,
+     Colors (cream fond, ink texte, lime action, orange = point logo + UN mot clé),
+     Elevation (halos CSS uniquement, ombre teintée lime sous le CTA primaire)
+   Note : Geist indisponible hors ligne → pile système, mêmes graisses (900)
+   et mêmes échelles ; clamp réduit à son plancher 3.3rem (canvas fixe 360px),
+   letter-spacing -0.06em. Aucun JS, aucune requête réseau, aucun asset.
+   ============================================================ */
+
+:root{
+  --cream:#FBFAF6;
+  --paper:#FFFFFF;
+  --ink:#172033;
+  --lime:#A3E635;
+  --lime-strong:#84CC16;
+  --lime-soft:#ECFCCB;
+  --orange:#F97316;
+  --muted:#475569;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:#E9E7DF;
+  font-family:var(--font-sans);
+  color:var(--ink);
+  padding:44px 28px 60px;
+  -webkit-font-smoothing:antialiased;
+}
+
+.studio-note{
+  text-align:center;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#75726A;
+  margin-bottom:30px;
+}
+
+.studio{
+  display:flex;
+  flex-wrap:wrap;
+  gap:52px;
+  justify-content:center;
+  align-items:flex-start;
+}
+
+.rig{width:360px}
+
+.browser{
+  width:360px;
+  border-radius:20px;
+  overflow:hidden;
+  background:#F2F1EB;
+  border:1px solid rgba(23,32,51,.14);
+  box-shadow:0 30px 60px -22px rgba(23,32,51,.38);
+}
+
+.chrome{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:10px 14px;
+  background:#E4E2D9;
+  border-bottom:1px solid rgba(23,32,51,.12);
+}
+.chrome i{width:9px;height:9px;border-radius:50%;background:#C7C4B8;display:block}
+.chrome .url{
+  flex:1;
+  text-align:center;
+  font-size:11px;
+  letter-spacing:.02em;
+  color:#79766C;
+  background:#F4F3EE;
+  border-radius:999px;
+  padding:4px 12px;
+  margin-left:4px;
+}
+
+/* --- canvas téléphone 360px --- */
+.screen{
+  position:relative;
+  width:360px;
+  height:760px;
+  background:var(--cream);
+  color:var(--ink);
+  overflow:hidden;
+}
+
+/* halos CSS — seule richesse du hero, zéro asset */
+.halo{position:absolute;border-radius:50%;filter:blur(46px);pointer-events:none;z-index:0}
+.halo-a{width:230px;height:230px;background:rgba(236,252,203,.95);top:64px;right:-70px}
+.halo-b{width:190px;height:190px;background:rgba(163,230,53,.32);bottom:170px;left:-80px}
+
+/* nav fixe (row 0) */
+.nav{
+  position:relative;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 18px;
+  height:62px;
+  background:rgba(251,250,246,.92);
+  border-bottom:1px solid rgba(23,32,51,.14);
+  white-space:nowrap;
+}
+.logo{font-size:1.08rem;font-weight:800;letter-spacing:-.02em;color:var(--ink);text-decoration:none}
+.logo .dot{color:var(--orange)} /* orange : point du logo uniquement ici */
+.auth{display:flex;align-items:center;gap:6px}
+.auth .ghost{
+  font-size:.8rem;font-weight:600;color:var(--ink);text-decoration:none;
+  padding:12px 4px;display:inline-block;
+}
+.auth .pill{
+  font-size:.76rem;font-weight:700;color:var(--ink);text-decoration:none;
+  border:1.5px solid var(--ink);border-radius:999px;
+  padding:11px 14px;display:inline-block;
+}
+
+/* hero (row 1) */
+.hero{position:relative;z-index:2;padding:42px 20px 0}
+.hero h1{
+  font-size:3.3rem;            /* plancher du clamp(3.3rem,8vw,7.2rem) sur 360px */
+  font-weight:900;
+  line-height:1.0;
+  letter-spacing:-0.06em;
+  color:var(--ink);
+}
+.hero h1 em{font-style:normal;color:var(--orange)} /* l'UN mot clé */
+.promise{
+  margin-top:18px;
+  font-size:18px;              /* body-lg */
+  font-weight:400;
+  line-height:1.6;
+  color:var(--muted);
+}
+.cta{
+  display:inline-block;
+  margin-top:26px;
+  background:var(--lime);      /* button-primary : pilule lime, trait encre 2px */
+  color:var(--ink);
+  border:2px solid var(--ink);
+  border-radius:999px;
+  padding:16px 26px;
+  font-size:1.02rem;
+  font-weight:700;
+  letter-spacing:-.01em;
+  text-decoration:none;
+  box-shadow:0 14px 26px -10px rgba(163,230,53,.6); /* ombre teintée lime */
+}
+.micro{
+  margin-top:14px;
+  font-size:13px;              /* caption */
+  line-height:1.55;
+  color:var(--muted);
+}
+
+/* amorce de la preuve « juste dessous » : carte penchée coupée par le bord */
+.peek{
+  position:absolute;
+  bottom:-72px;
+  left:50%;
+  width:300px;
+  height:170px;
+  transform:translateX(-50%) rotate(-2deg);
+  background:var(--paper);
+  border:4px solid var(--ink);
+  border-radius:32px;
+  box-shadow:0 25px 50px -12px rgba(23,32,51,.15);
+  z-index:1;
+}
+.peek .strip{
+  height:10px;
+  margin:34px 22px 0;
+  border-radius:999px;
+  background:repeating-linear-gradient(90deg,rgba(23,32,51,.26) 0 9px,transparent 9px 15px);
+}
+
+figcaption{
+  margin-top:14px;
+  text-align:center;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:#6E6B63;
+}
+</style>
+</head>
+<body>
+
+<p class="studio-note">Mock — Hero · deux états · canvas 360px</p>
+
+<main class="studio">
+
+  <!-- (a) Visiteur déconnecté -->
+  <figure class="rig">
+    <div class="browser">
+      <div class="chrome"><i></i><i></i><i></i><span class="url">omnelyo.com</span></div>
+      <div class="screen">
+        <div class="halo halo-a"></div>
+        <div class="halo halo-b"></div>
+        <header class="nav">
+          <a class="logo" href="#">Omnelyo<span class="dot">.</span></a>
+          <nav class="auth">
+            <a class="ghost" href="#">Se connecter</a>
+            <a class="pill" href="#">Créer gratuitement</a>
+          </nav>
+        </header>
+        <section class="hero">
+          <h1>La vidéo<br>qui <em>raconte</em>.</h1>
+          <p class="promise">Collez un lien. Recevez un Short raconté — histoire nouvelle, voix off, publié sur vos 4 réseaux.</p>
+          <a class="cta" href="/login">Créer mes premiers Shorts</a>
+          <p class="micro">3 créations offertes · Sans carte bancaire · Aucune promesse magique, un vrai rythme</p>
+        </section>
+        <div class="peek"><div class="strip"></div></div>
+      </div>
+    </div>
+    <figcaption>a — Visiteur déconnecté</figcaption>
+  </figure>
+
+  <!-- (b) Visiteur connecté : la nav honore le localStorage -->
+  <figure class="rig">
+    <div class="browser">
+      <div class="chrome"><i></i><i></i><i></i><span class="url">omnelyo.com</span></div>
+      <div class="screen">
+        <div class="halo halo-a"></div>
+        <div class="halo halo-b"></div>
+        <header class="nav">
+          <a class="logo" href="#">Omnelyo<span class="dot">.</span></a>
+          <nav class="auth">
+            <a class="pill" href="/dashboard">Mon tableau de bord</a>
+          </nav>
+        </header>
+        <section class="hero">
+          <h1>La vidéo<br>qui <em>raconte</em>.</h1>
+          <p class="promise">Collez un lien. Recevez un Short raconté — histoire nouvelle, voix off, publié sur vos 4 réseaux.</p>
+          <a class="cta" href="/login">Créer mes premiers Shorts</a>
+          <p class="micro">3 créations offertes · Sans carte bancaire · Aucune promesse magique, un vrai rythme</p>
+        </section>
+        <div class="peek"><div class="strip"></div></div>
+      </div>
+    </div>
+    <figcaption>b — Visiteur connecté</figcaption>
+  </figure>
+
+</main>
+
+</body>
+</html>

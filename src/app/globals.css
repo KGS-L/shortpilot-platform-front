@@ -1,7 +1,39 @@
 @import "tailwindcss";
 
-:root { --background:#f5f7fb; --foreground:#172033; --surface:#fff; --border:#dde4ee; --muted:#667085; --brand:#70df1b; --brand-strong:#52b80e; }
-@theme inline { --color-background:var(--background); --color-foreground:var(--foreground); --color-surface:var(--surface); --color-border:var(--border); --color-muted:var(--muted); --color-brand:var(--brand); --color-brand-strong:var(--brand-strong); --font-sans:var(--font-geist-sans); --font-mono:var(--font-geist-mono); }
+/* Palette Omnelyo — source unique : DESIGN.md (ux-frontend-2026-08-17). */
+:root {
+  --cream:#FBFAF6;
+  --paper:#FFFFFF;
+  --ink:#172033;
+  --lime:#A3E635;
+  --lime-strong:#84CC16;
+  --lime-soft:#ECFCCB;
+  --orange:#F97316;
+  --orange-soft:#FDBA74;
+  --orange-light:#FB923C;
+  --muted:#475569;
+  --border:#dde4ee;
+}
+
+@theme inline {
+  --color-cream:var(--cream);
+  --color-paper:var(--paper);
+  --color-ink:var(--ink);
+  --color-lime:var(--lime);
+  --color-lime-strong:var(--lime-strong);
+  --color-lime-soft:var(--lime-soft);
+  --color-orange:var(--orange);
+  --color-orange-soft:var(--orange-soft);
+  --color-orange-light:var(--orange-light);
+  --color-muted:var(--muted);
+  --font-sans:var(--font-geist-sans);
+  --font-mono:var(--font-geist-mono);
+}
+
 * { border-color:var(--border); }
-html { background:var(--background); }
-body { min-height:100vh; background:var(--background); color:var(--foreground); }
+html { background:var(--cream); }
+body { min-height:100vh; background:var(--cream); color:var(--ink); }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior:smooth; }
+}
